@@ -118,13 +118,15 @@ ny$BLDR = ifelse(is.na(ny$BLDR),
 
 #### calculate average lot front (LTFRONT) group by zip, zip3, and boro
 ny=ny%>%group_by(ZIP)%>%
-  mutate(avg_ltfront_zip=sum(LTFRONT)/sum(NROW(LTFRONT)-NROW(LTFRONT[LTFRONT==0])))
+  mutate(avg_ltfront_ZIP=sum(LTFRONT)/sum(NROW(LTFRONT)-NROW(LTFRONT[LTFRONT==0])))
 
 ny=ny%>%group_by(ZIP3)%>%
-  mutate(avg_ltfront_zip3=sum(LTFRONT)/sum(NROW(LTFRONT)-NROW(LTFRONT[LTFRONT==0])))
+  mutate(avg_ltfront_ZIP3=sum(LTFRONT)/sum(NROW(LTFRONT)-NROW(LTFRONT[LTFRONT==0])))
 
 ny=ny%>%group_by(BORO)%>%
   mutate(avg_ltfront_BORO=sum(LTFRONT)/sum(NROW(LTFRONT)-NROW(LTFRONT[LTFRONT==0])))
+
+# ny[,c("avg_ltfront_BORO", "avg_ltfront_zip3", "avg_ltfront_zip")] <- list(NULL)
 
 # Note:
 # The difference between NROW() and NCOL() and their lowercase variants (ncol() and nrow()) is 
@@ -133,4 +135,11 @@ ny=ny%>%group_by(BORO)%>%
 # and are robust if you end up subsetting your data such that R drops an empty dimension
 
 ## replace missing ltfront, order ZIP->ZIP3->BORO
+ny$LTFRONT = ifelse(is.na(ny$LTFRONT)|ny$LTFRONT==0,
+                 ifelse(is.na(ny$avg_bldr_ZIP)|ny$avg_bldr_ZIP==0,
+                        ifelse(is.na(ny$avg_bldr_ZIP3)|ny$avg_bldr_ZIP3==0,
+                               ny$avg_bldr_BORO,ny$avg_bldr_ZIP3),ny$avg_bldr_ZIP),ny$BLDR)
+#ny$LTRatio=ny$LTDEPTH1/ny$LTFRONT1
+
+
 
