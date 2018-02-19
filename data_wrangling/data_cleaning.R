@@ -135,11 +135,38 @@ ny=ny%>%group_by(BORO)%>%
 # and are robust if you end up subsetting your data such that R drops an empty dimension
 
 ## replace missing ltfront, order ZIP->ZIP3->BORO
-ny$LTFRONT = ifelse(is.na(ny$LTFRONT)|ny$LTFRONT==0,
-                 ifelse(is.na(ny$avg_bldr_ZIP)|ny$avg_bldr_ZIP==0,
-                        ifelse(is.na(ny$avg_bldr_ZIP3)|ny$avg_bldr_ZIP3==0,
-                               ny$avg_bldr_BORO,ny$avg_bldr_ZIP3),ny$avg_bldr_ZIP),ny$BLDR)
+ny$LTFRONT1 = ifelse(ny$LTFRONT==0,
+                 ifelse(is.na(ny$avg_ltfront_ZIP)|ny$avg_ltfront_ZIP==0,
+                        ifelse(is.na(ny$avg_ltfront_ZIP3)|ny$avg_ltfront_ZIP3==0,
+                               ny$avg_ltfront_BORO,ny$avg_ltfront_ZIP3),ny$avg_ltfront_ZIP),ny$LTFRONT)
 #ny$LTRatio=ny$LTDEPTH1/ny$LTFRONT1
 
+## calculate average ltdepth, zip, zip3, boro
+ny=ny%>%group_by(ZIP)%>%
+  mutate(avg_ltdepth_ZIP=sum(LTDEPTH)/sum(NROW(LTDEPTH)-NROW(LTDEPTH[LTDEPTH==0])))
+ny=ny%>%group_by(ZIP3)%>%
+  mutate(avg_ltdepth_ZIP3=sum(LTDEPTH)/sum(NROW(LTDEPTH)-NROW(LTDEPTH[LTDEPTH==0])))
+ny=ny%>%group_by(BORO)%>%
+  mutate(avg_ltdepth_BORO=sum(LTDEPTH)/sum(NROW(LTDEPTH)-NROW(LTDEPTH[LTDEPTH==0])))
 
+## replace missing ltfront, order ZIP->ZIP3->BORO
+ny$LTDEPTH1 = ifelse(ny$LTDEPTH==0,
+                     ifelse(is.na(ny$avg_ltdepth_ZIP)|ny$avg_ltdepth_ZIP==0,
+                            ifelse(is.na(ny$avg_ltdepth_ZIP3)|ny$avg_ltdepth_ZIP3==0,
+                                   ny$avg_ltdepth_BORO,ny$avg_ltdepth_ZIP3),ny$avg_ltdepth_ZIP),ny$LTDEPTH)
 
+# replace LTFRONT and LTDEPTH
+# dealing with either LTFRONT or LTDEPTH is zero
+ny$LTFRONT=ifelse(ny$LTFRONT==0&ny$LTDEPTH!=0,ny$LTDEPTH/ny$LTR,ny$LTFRONT)
+ny$LTDEPTH=ifelse(ny$LTDEPTH==0&ny$LTFRONT!=0,ny$LTFRONT*ny$LTR,ny$LTDEPTH)
+# dealing with both LTFRONT and LTDEPTH are zero
+ny$LTFRONT=ifelse(ny$LTFRONT==0,ny$LTFRONT1,ny$LTFRONT)
+ny$LTDEPTH=ifelse(ny$LTDEPTH==0,ny$LTDEPTH1,ny$LTDEPTH)
+
+## replace missing BLDFRONT with
+ny=ny%>%group_by(ZIP)%>%
+  mutate(avg_BLDFRONT_ZIP=sum(BLDFRONT)/sum(NROW(BLDFRONT)-NROW(BLDFRONT[BLDFRONT==0])))
+ny=ny%>%group_by(ZIP3)%>%
+  mutate(avg_BLDFRONT_ZIP3=sum(BLDFRONT)/sum(NROW(BLDFRONT)-NROW(BLDFRONT[BLDFRONT==0])))
+ny=ny%>%group_by(BORO)%>%
+  mutate(avg_BLDFRONT_BORO=sum(BLDFRONT)/sum(NROW(BLDFRONT)-NROW(BLDFRONT[BLDFRONT==0])))
